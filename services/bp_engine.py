@@ -14,6 +14,14 @@ class ActionType(Enum):
     BAN = "ban"
     PICK = "pick"
 
+class SeriesType(Enum):
+    """赛制类型"""
+    BO1 = 1   # 先到1胜
+    BO3 = 2   # 先到2胜
+    BO5 = 3   # 先到3胜
+    BO7 = 4   # 先到4胜
+    BO9 = 5   # 先到5胜
+
 class BPState:
     """BP状态管理 - KPL全局BP赛制"""
 
@@ -45,7 +53,23 @@ class BPState:
         (Side.RED, ActionType.PICK, 1),  # 20. 红 pick 5
     ]
 
-    def __init__(self):
+    # 巅峰对决流程（盲选，无禁用，双方同时选5个英雄）
+    PEAK_DUEL_SEQUENCE = [
+        # 双方同时选择5个英雄（按顺序录入，但互不可见）
+        (Side.BLUE, ActionType.PICK, 1),  # 1. 蓝 pick 1
+        (Side.BLUE, ActionType.PICK, 1),  # 2. 蓝 pick 2
+        (Side.BLUE, ActionType.PICK, 1),  # 3. 蓝 pick 3
+        (Side.BLUE, ActionType.PICK, 1),  # 4. 蓝 pick 4
+        (Side.BLUE, ActionType.PICK, 1),  # 5. 蓝 pick 5
+        (Side.RED, ActionType.PICK, 1),   # 6. 红 pick 1
+        (Side.RED, ActionType.PICK, 1),   # 7. 红 pick 2
+        (Side.RED, ActionType.PICK, 1),   # 8. 红 pick 3
+        (Side.RED, ActionType.PICK, 1),   # 9. 红 pick 4
+        (Side.RED, ActionType.PICK, 1),   # 10. 红 pick 5
+    ]
+
+    def __init__(self, is_peak_duel: bool = False):
+        self.is_peak_duel = is_peak_duel
         self.reset()
 
     def reset(self):
@@ -57,18 +81,26 @@ class BPState:
         self.red_picks: List[int] = []  # 本局红方选择
         self.is_finished = False
         self.history: List[Dict] = []
+        # 巅峰对决模式下，蓝方选完后红方选（盲选，互不可见）
+        self.blue_picks_hidden = False  # 蓝方选择是否对红方隐藏
+
+    def get_sequence(self):
+        """获取当前BP流程"""
+        return self.PEAK_DUEL_SEQUENCE if self.is_peak_duel else self.BP_SEQUENCE
 
     def get_current_action(self) -> Optional[Dict]:
         """获取当前需要执行的操作"""
         if self.is_finished:
             return None
 
-        if self.step < len(self.BP_SEQUENCE):
-            side, action_type, _ = self.BP_SEQUENCE[self.step]
+        sequence = self.get_sequence()
+        if self.step < len(sequence):
+            side, action_type, _ = sequence[self.step]
             return {
                 "side": side.value,
                 "action": action_type.value,
-                "step": self.step
+                "step": self.step,
+                "is_peak_duel": self.is_peak_duel
             }
 
         return None
@@ -85,26 +117,34 @@ class BPState:
         if current["action"] != action:
             return {"success": False, "error": f"当前操作类型应为{current['action']}"}
 
-        # 检查英雄是否已被Ban/Pick
-        all_bans = self.blue_bans + self.red_bans
-        all_picks = self.blue_picks + self.red_picks
-
-        if hero_id in all_bans:
-            return {"success": False, "error": "该英雄已被禁用"}
-        if hero_id in all_picks:
-            return {"success": False, "error": "该英雄已被选择"}
-
-        # 执行操作
-        if action == "ban":
-            if side == "blue":
-                self.blue_bans.append(hero_id)
-            else:
-                self.red_bans.append(hero_id)
-        else:
+        # 巅峰对决模式：无任何限制，双方都可以任选英雄（包括本局已选、对方已选、之前用过的英雄）
+        if self.is_peak_duel:
+            # 巅峰对决完全不限制选择
             if side == "blue":
                 self.blue_picks.append(hero_id)
             else:
                 self.red_picks.append(hero_id)
+        else:
+            # 常规模式：检查英雄是否已被Ban/Pick
+            all_bans = self.blue_bans + self.red_bans
+            all_picks = self.blue_picks + self.red_picks
+
+            if hero_id in all_bans:
+                return {"success": False, "error": "该英雄已被禁用"}
+            if hero_id in all_picks:
+                return {"success": False, "error": "该英雄已被选择"}
+
+            # 执行操作
+            if action == "ban":
+                if side == "blue":
+                    self.blue_bans.append(hero_id)
+                else:
+                    self.red_bans.append(hero_id)
+            else:
+                if side == "blue":
+                    self.blue_picks.append(hero_id)
+                else:
+                    self.red_picks.append(hero_id)
 
         self.history.append({
             "step": self.step,
@@ -115,7 +155,7 @@ class BPState:
 
         self.step += 1
 
-        if self.step >= len(self.BP_SEQUENCE):
+        if self.step >= len(self.get_sequence()):
             self.is_finished = True
 
         return {
@@ -124,17 +164,34 @@ class BPState:
             "is_finished": self.is_finished
         }
 
-    def get_state(self) -> Dict:
-        """获取当前BP状态"""
+    def get_state(self, for_side: str = None) -> Dict:
+        """获取当前BP状态
+
+        Args:
+            for_side: 为哪一方获取状态（巅峰对决时用于隐藏对方选择）
+        """
+        # 巅峰对决模式下，未完成时隐藏对方选择
+        blue_picks = self.blue_picks
+        red_picks = self.red_picks
+
+        if self.is_peak_duel and not self.is_finished:
+            if for_side == "blue":
+                # 蓝方只能看到自己的选择
+                red_picks = []
+            elif for_side == "red":
+                # 红方只能看到自己的选择
+                blue_picks = []
+
         return {
             "step": self.step,
             "blue_bans": self.blue_bans,
             "red_bans": self.red_bans,
-            "blue_picks": self.blue_picks,
-            "red_picks": self.red_picks,
+            "blue_picks": blue_picks,
+            "red_picks": red_picks,
             "current_action": self.get_current_action(),
             "is_finished": self.is_finished,
-            "history": self.history
+            "history": self.history,
+            "is_peak_duel": self.is_peak_duel
         }
 
     def undo_last_action(self) -> bool:
@@ -163,9 +220,21 @@ class BPState:
 class GlobalBPManager:
     """全局BP管理器 - 管理多场比赛"""
 
-    def __init__(self):
+    # 赛制配置：BO类型 -> (先到几胜, 巅峰对决局数)
+    SERIES_CONFIG = {
+        SeriesType.BO1: (1, None),   # BO1无巅峰对决
+        SeriesType.BO3: (2, None),   # BO3无巅峰对决
+        SeriesType.BO5: (3, None),   # BO5无巅峰对决
+        SeriesType.BO7: (4, 7),      # BO7第7局巅峰对决
+        SeriesType.BO9: (5, 9),      # BO9第9局巅峰对决
+    }
+
+    def __init__(self, series_type: SeriesType = SeriesType.BO7):
+        self.series_type = series_type
+        self.first_to, self.peak_duel_game = self.SERIES_CONFIG[series_type]
+
         self.game_number = 1
-        self.current_bp: BPState = BPState()
+        self.current_bp: BPState = BPState(is_peak_duel=False)
 
         # 队伍信息
         self.team_a_name = "蓝队"  # 队伍A名称
@@ -175,7 +244,6 @@ class GlobalBPManager:
         # 比分
         self.team_a_wins = 0
         self.team_b_wins = 0
-        self.first_to = 4  # BO7，先到4胜
 
         # 各队已用英雄（本队不可再用，对方可以选）
         self.team_a_used: Set[int] = set()
@@ -187,6 +255,15 @@ class GlobalBPManager:
         # 等待选边
         self.waiting_side_selection = False
         self.last_loser = None  # 上一局败者 ('A' 或 'B')
+
+    def set_series_type(self, series_type: SeriesType):
+        """设置赛制类型"""
+        self.series_type = series_type
+        self.first_to, self.peak_duel_game = self.SERIES_CONFIG[series_type]
+
+    def is_peak_duel_game(self) -> bool:
+        """当前局是否为巅峰对决"""
+        return self.peak_duel_game is not None and self.game_number == self.peak_duel_game
 
     @property
     def blue_team_name(self) -> str:
@@ -227,13 +304,15 @@ class GlobalBPManager:
             self.team_b_wins += 1
             self.last_loser = 'A'
 
-        # 记录本局使用的英雄到对应队伍
-        if self.team_a_is_blue:
-            self.team_a_used.update(self.current_bp.blue_picks)
-            self.team_b_used.update(self.current_bp.red_picks)
-        else:
-            self.team_b_used.update(self.current_bp.blue_picks)
-            self.team_a_used.update(self.current_bp.red_picks)
+        # 巅峰对决不记录已用英雄（全局BP失效）
+        if not self.current_bp.is_peak_duel:
+            # 记录本局使用的英雄到对应队伍
+            if self.team_a_is_blue:
+                self.team_a_used.update(self.current_bp.blue_picks)
+                self.team_b_used.update(self.current_bp.red_picks)
+            else:
+                self.team_b_used.update(self.current_bp.blue_picks)
+                self.team_a_used.update(self.current_bp.red_picks)
 
         # 记录历史
         self.games_history.append({
@@ -244,7 +323,8 @@ class GlobalBPManager:
             "red_picks": self.current_bp.red_picks.copy(),
             "blue_bans": self.current_bp.blue_bans.copy(),
             "red_bans": self.current_bp.red_bans.copy(),
-            "winner": winner
+            "winner": winner,
+            "is_peak_duel": self.current_bp.is_peak_duel
         })
         self.game_number += 1
 
@@ -265,13 +345,16 @@ class GlobalBPManager:
 
     def start_new_game(self):
         """开始新一局"""
-        self.current_bp.reset()
+        is_peak = self.is_peak_duel_game()
+        self.current_bp = BPState(is_peak_duel=is_peak)
+        if is_peak:
+            self.current_bp.reset()
 
     def is_series_finished(self) -> bool:
         """系列赛是否结束"""
         return self.team_a_wins >= self.first_to or self.team_b_wins >= self.first_to
 
-    def get_state(self) -> Dict:
+    def get_state(self, for_side: str = None) -> Dict:
         """获取完整状态"""
         return {
             "game_number": self.game_number,
@@ -283,12 +366,16 @@ class GlobalBPManager:
             "team_a_wins": self.team_a_wins,
             "team_b_wins": self.team_b_wins,
             "first_to": self.first_to,
+            "series_type": self.series_type.value,
+            "series_type_name": self.series_type.name,
+            "peak_duel_game": self.peak_duel_game,
+            "is_peak_duel": self.current_bp.is_peak_duel if self.current_bp else False,
             "blue_used": list(self.blue_used),
             "red_used": list(self.red_used),
             "team_a_used": list(self.team_a_used),
             "team_b_used": list(self.team_b_used),
             "games_history": self.games_history,
-            "current_bp": self.current_bp.get_state(),
+            "current_bp": self.current_bp.get_state(for_side) if self.current_bp else None,
             "waiting_side_selection": self.waiting_side_selection,
             "last_loser": self.last_loser,
             "series_finished": self.is_series_finished()
@@ -298,9 +385,9 @@ class GlobalBPManager:
 # 会话存储
 bp_sessions: Dict[str, GlobalBPManager] = {}
 
-def create_bp_session(session_id: str) -> GlobalBPManager:
+def create_bp_session(session_id: str, series_type: SeriesType = SeriesType.BO7) -> GlobalBPManager:
     """创建新的全局BP会话"""
-    bp_sessions[session_id] = GlobalBPManager()
+    bp_sessions[session_id] = GlobalBPManager(series_type=series_type)
     return bp_sessions[session_id]
 
 def get_bp_session(session_id: str) -> Optional[GlobalBPManager]:

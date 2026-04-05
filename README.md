@@ -4,7 +4,9 @@
 
 ## ✨ 功能特性
 
-- **全局 BP 支持** - 符合 KPL 官方赛制，支持 BO7 系列赛
+- **多种赛制支持** - 支持 BO1/BO3/BO5/BO7/BO9 多种赛制
+- **全局 BP 支持** - 符合 KPL 官方赛制，本队已用英雄不可再选
+- **巅峰对决** - BO7 第 7 局、BO9 第 9 局自动触发巅峰对决（盲选模式）
 - **败者选边** - 每局结束后败方可选择下一局阵营
 - **智能推荐** - 基于阵容分析推荐最优英雄选择
 - **阵容分析** - 实时分析双方阵容优劣势
@@ -68,13 +70,26 @@ wzry_bp/
 
 ## 🎯 BP 流程
 
-采用 KPL 全局 BP 赛制（BO7）：
+### 常规 BP（BO1-BO6 / BO8 等）
+
+采用 KPL 全局 BP 赛制：
 
 1. **Ban 阶段 1** - 双方各禁 2 个英雄
 2. **Pick 阶段 1** - 蓝1→红1,2→蓝2,3→红3
 3. **Ban 阶段 2** - 双方各禁 3 个英雄
 4. **Pick 阶段 2** - 红4→蓝4,5→红5
 5. **全局禁用** - 本队已选英雄后续不可再选
+
+### 巅峰对决（BO7 第 7 局 / BO9 第 9 局）
+
+巅峰对决为盲选模式，规则如下：
+
+- **无禁用阶段** - 直接进入 Pick
+- **任选英雄** - 可选择任意英雄，包括：
+  - 本队之前比赛已用英雄
+  - 对方已选英雄
+  - 双方可选相同英雄
+- **盲选机制** - 双方选择互不可见，BP 结束后同时揭晓
 
 ## 📡 API 接口
 
@@ -89,12 +104,13 @@ GET /api/counters        # 获取克制关系
 ### BP 流程
 
 ```
-POST /api/bp/start                    # 开始 BP 会话
+POST /api/bp/start                    # 开始 BP 会话 (body: {series_type: "BO1"|"BO3"|"BO5"|"BO7"|"BO9"})
 POST /api/bp/:session_id/action       # 执行 Ban/Pick
 POST /api/bp/:session_id/undo         # 撤销操作
 POST /api/bp/:session_id/set-teams    # 设置队名
 POST /api/bp/:session_id/set-winner   # 设置胜者
 POST /api/bp/:session_id/select-side  # 败者选边
+POST /api/bp/:session_id/new-game     # 开始新一局
 GET  /api/bp/:session_id/recommend    # 获取推荐
 GET  /api/bp/:session_id/state        # 获取状态
 ```
@@ -113,6 +129,14 @@ POST /api/analyze/team  # 分析单队阵容
 - **数据**: JSON 文件存储
 
 ## 📝 更新日志
+
+### v1.1.0
+- 新增 BO1/BO3/BO5/BO7/BO9 多种赛制支持
+- 实现巅峰对决（盲选模式）功能
+  - BO7 第 7 局、BO9 第 9 局自动触发
+  - 无禁用阶段，双方任选英雄
+  - 支持双方选择相同英雄
+- 优化赛制选择界面布局
 
 ### v1.0.0
 - 实现完整 BP 流程

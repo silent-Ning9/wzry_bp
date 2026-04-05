@@ -5,7 +5,7 @@ import os
 import uuid
 from pypinyin import lazy_pinyin
 
-from services.bp_engine import create_bp_session, get_bp_session, delete_bp_session
+from services.bp_engine import create_bp_session, get_bp_session, delete_bp_session, SeriesType
 from services.recommend import RecommendService
 from services.analysis import AnalysisService
 
@@ -94,7 +94,22 @@ def get_counters():
 def start_bp():
     """开始新的全局BP会话"""
     session_id = str(uuid.uuid4())[:8]
-    manager = create_bp_session(session_id)
+
+    # 获取赛制类型
+    data = request.get_json() or {}
+    series_type_str = data.get('series_type', 'BO7').upper()
+
+    # 解析赛制类型
+    series_type_map = {
+        'BO1': SeriesType.BO1,
+        'BO3': SeriesType.BO3,
+        'BO5': SeriesType.BO5,
+        'BO7': SeriesType.BO7,
+        'BO9': SeriesType.BO9,
+    }
+    series_type = series_type_map.get(series_type_str, SeriesType.BO7)
+
+    manager = create_bp_session(session_id, series_type=series_type)
 
     return jsonify({
         "session_id": session_id,
@@ -129,19 +144,21 @@ def execute_bp_action(session_id):
     if current_action["action"] != action:
         return jsonify({"success": False, "error": f"当前操作类型应为{current_action['action']}"})
 
-    # Ban阶段：对方已用英雄不能被ban
-    if action == 'ban':
-        if side == 'blue' and hero_id in manager.red_used:
-            return jsonify({"success": False, "error": "红方已用过的英雄不能被禁用"})
-        if side == 'red' and hero_id in manager.blue_used:
-            return jsonify({"success": False, "error": "蓝方已用过的英雄不能被禁用"})
+    # 巅峰对决模式：无任何限制，跳过已用英雄检查
+    if not bp_state.is_peak_duel:
+        # Ban阶段：对方已用英雄不能被ban
+        if action == 'ban':
+            if side == 'blue' and hero_id in manager.red_used:
+                return jsonify({"success": False, "error": "红方已用过的英雄不能被禁用"})
+            if side == 'red' and hero_id in manager.blue_used:
+                return jsonify({"success": False, "error": "蓝方已用过的英雄不能被禁用"})
 
-    # Pick阶段：本队已用英雄不能再选
-    if action == 'pick':
-        if side == 'blue' and hero_id in manager.blue_used:
-            return jsonify({"success": False, "error": "蓝方在之前比赛中已选择该英雄"})
-        if side == 'red' and hero_id in manager.red_used:
-            return jsonify({"success": False, "error": "红方在之前比赛中已选择该英雄"})
+        # Pick阶段：本队已用英雄不能再选
+        if action == 'pick':
+            if side == 'blue' and hero_id in manager.blue_used:
+                return jsonify({"success": False, "error": "蓝方在之前比赛中已选择该英雄"})
+            if side == 'red' and hero_id in manager.red_used:
+                return jsonify({"success": False, "error": "红方在之前比赛中已选择该英雄"})
 
     result = bp_state.execute_action(hero_id, side, action)
 

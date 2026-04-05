@@ -110,6 +110,18 @@ body {
     border: 1px solid rgba(167, 139, 250, 0.3);
 }
 
+.game-info.peak-duel {
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 69, 0, 0.3));
+    color: #ffd700;
+    border: 2px solid rgba(255, 215, 0, 0.6);
+    animation: peak-glow 1.5s ease-in-out infinite;
+}
+
+@keyframes peak-glow {
+    0%, 100% { box-shadow: 0 0 10px rgba(255, 215, 0, 0.3); }
+    50% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.6); }
+}
+
 /* BP状态 */
 .bp-status {
     background: rgba(255, 255, 255, 0.03);
@@ -831,20 +843,25 @@ body {
 }
 
 .format-options {
-    display: flex;
-    gap: 15px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
 }
 
 .format-option {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 12px 18px;
+    padding: 10px 14px;
     border-radius: 10px;
     background: rgba(0, 0, 0, 0.3);
     border: 2px solid rgba(255, 255, 255, 0.1);
     cursor: pointer;
     transition: all 0.3s;
+}
+
+.format-option:last-child {
+    grid-column: span 2;
 }
 
 .format-option:has(input:checked) {

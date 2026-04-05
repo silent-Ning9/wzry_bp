@@ -13,6 +13,12 @@ const state = {
     teamAIsBlue: true,
     teamAWins: 0,
     teamBWins: 0,
+    // 赛制信息
+    seriesType: 'BO7',
+    seriesTypeName: 'BO7',
+    firstTo: 4,
+    peakDuelGame: 7,
+    isPeakDuel: false,
     // 各队已用英雄
     teamAUsed: [],
     teamBUsed: [],
@@ -154,6 +160,11 @@ function getUnavailableHeroIds() {
         return { banned: [], picked: [] };
     }
 
+    // 巅峰对决模式：无任何限制，可以选择任意英雄
+    if (state.isPeakDuel) {
+        return { banned: [], picked: [] };
+    }
+
     const banned = [...state.bpState.blue_bans, ...state.bpState.red_bans];
     const picked = [...state.bpState.blue_picks, ...state.bpState.red_picks];
 
@@ -230,9 +241,17 @@ async function confirmSetup() {
     const teamA = elements.teamAInput.value.trim() || '蓝队';
     const teamB = elements.teamBInput.value.trim() || '红队';
 
+    // 获取选中的赛制
+    const formatRadio = document.querySelector('input[name="format"]:checked');
+    const seriesType = formatRadio ? formatRadio.value : 'BO7';
+
     try {
-        // 创建会话
-        const startResponse = await fetch(`${API_BASE}/api/bp/start`, { method: 'POST' });
+        // 创建会话（传入赛制类型）
+        const startResponse = await fetch(`${API_BASE}/api/bp/start`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ series_type: seriesType })
+        });
         const startData = await startResponse.json();
 
         state.sessionId = startData.session_id;
@@ -468,6 +487,12 @@ function updateFullState(serverState) {
     state.teamAIsBlue = serverState.team_a_is_blue !== undefined ? serverState.team_a_is_blue : true;
     state.teamAWins = serverState.team_a_wins || 0;
     state.teamBWins = serverState.team_b_wins || 0;
+    // 赛制信息
+    state.seriesType = serverState.series_type || 'BO7';
+    state.seriesTypeName = serverState.series_type_name || 'BO7';
+    state.firstTo = serverState.first_to || 4;
+    state.peakDuelGame = serverState.peak_duel_game || null;
+    state.isPeakDuel = serverState.is_peak_duel || false;
     state.teamAUsed = serverState.team_a_used || [];
     state.teamBUsed = serverState.team_b_used || [];
     state.gamesHistory = serverState.games_history || [];
@@ -489,8 +514,14 @@ function updateUI() {
     elements.teamAScore.textContent = state.teamAWins;
     elements.teamBScore.textContent = state.teamBWins;
 
-    // 更新局数信息
-    elements.gameInfo.textContent = `第 ${state.gameNumber} 局`;
+    // 更新局数信息（巅峰对决特殊显示）
+    if (state.isPeakDuel) {
+        elements.gameInfo.textContent = `第 ${state.gameNumber} 局 - ⚔️ 巅峰对决`;
+        elements.gameInfo.classList.add('peak-duel');
+    } else {
+        elements.gameInfo.textContent = `第 ${state.gameNumber} 局`;
+        elements.gameInfo.classList.remove('peak-duel');
+    }
 
     // 更新队伍名称
     updateTeamNames();
