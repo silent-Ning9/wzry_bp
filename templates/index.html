@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>王者荣耀BP系统 - 全局BP</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 头部 -->
+        <header class="header">
+            <h1>🎮 王者荣耀 BP 系统</h1>
+            <div class="header-actions">
+                <div id="scoreBoard" class="score-board hidden">
+                    <span id="teamAScore" class="score-item">0</span>
+                    <span class="score-vs">:</span>
+                    <span id="teamBScore" class="score-item">0</span>
+                </div>
+                <span id="gameInfo" class="game-info hidden">第 1 局</span>
+                <button id="startBtn" class="btn btn-primary">开始BP</button>
+                <button id="newGameBtn" class="btn btn-success hidden">新一局</button>
+                <button id="undoBtn" class="btn btn-secondary" disabled>撤销</button>
+            </div>
+        </header>
+
+        <!-- 队伍设置面板 -->
+        <div id="teamSetupPanel" class="team-setup-panel hidden">
+            <div class="setup-card">
+                <h2>🏆 比赛设置</h2>
+                <div class="setup-form">
+                    <div class="form-group">
+                        <label for="teamAInput">队伍 A 名称</label>
+                        <input type="text" id="teamAInput" placeholder="请输入队伍名称" maxlength="10">
+                    </div>
+                    <div class="form-group">
+                        <label for="teamBInput">队伍 B 名称</label>
+                        <input type="text" id="teamBInput" placeholder="请输入队伍名称" maxlength="10">
+                    </div>
+                    <div class="form-group">
+                        <label>赛制</label>
+                        <div class="format-options">
+                            <label class="format-option">
+                                <input type="radio" name="format" value="7" checked>
+                                <span>BO7 (先到4胜)</span>
+                            </label>
+                        </div>
+                    </div>
+                    <button id="confirmSetupBtn" class="btn btn-primary btn-full">确认并开始</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- BP状态提示 -->
+        <div id="bpStatus" class="bp-status hidden">
+            <div class="status-info">
+                <span id="currentPhase">准备开始</span>
+                <span id="currentSide" class="side-badge"></span>
+            </div>
+        </div>
+
+        <!-- 胜者选择面板 -->
+        <div id="winnerPanel" class="winner-panel hidden">
+            <div class="winner-card">
+                <h2>🎉 本局结束</h2>
+                <p>请选择本局胜者</p>
+                <div class="winner-buttons">
+                    <button id="blueWinBtn" class="btn btn-blue"></button>
+                    <button id="redWinBtn" class="btn btn-red"></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 选边面板 -->
+        <div id="sideSelectionPanel" class="side-selection-panel hidden">
+            <div class="side-card">
+                <h2>🎯 败者选边</h2>
+                <p id="loserSelectText"></p>
+                <div class="side-buttons">
+                    <button id="selectBlueBtn" class="btn btn-blue">选择蓝方</button>
+                    <button id="selectRedBtn" class="btn btn-red">选择红方</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 系列赛结束面板 -->
+        <div id="seriesEndPanel" class="series-end-panel hidden">
+            <div class="series-end-card">
+                <h2>🏆 系列赛结束</h2>
+                <p id="winnerText"></p>
+                <p id="finalScoreText"></p>
+                <button id="newSeriesBtn" class="btn btn-primary">开始新系列赛</button>
+            </div>
+        </div>
+
+        <!-- 全局已用英雄提示 -->
+        <div id="globalBanInfo" class="global-ban-info hidden">
+            <div class="global-used-row">
+                <div class="global-used-team blue">
+                    <h4 id="blueUsedTitle">💙 蓝方已用（蓝方不可再选）</h4>
+                    <div id="blueUsedHeroes" class="global-used-heroes"></div>
+                </div>
+                <div class="global-used-team red">
+                    <h4 id="redUsedTitle">❤️ 红方已用（红方不可再选）</h4>
+                    <div id="redUsedHeroes" class="global-used-heroes"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <!-- 左侧：蓝方 -->
+            <div class="team-panel blue-team">
+                <h2 id="blueTeamTitle" class="team-title blue">💙 蓝方</h2>
+                <div class="bans-section">
+                    <h3>🚫 禁用</h3>
+                    <div id="blueBans" class="hero-slots">
+                        <div class="slot ban-slot"></div>
+                        <div class="slot ban-slot"></div>
+                        <div class="slot ban-slot"></div>
+                        <div class="slot ban-slot"></div>
+                        <div class="slot ban-slot"></div>
+                    </div>
+                </div>
+                <div class="picks-section">
+                    <h3>✨ 选择</h3>
+                    <div id="bluePicks" class="hero-slots">
+                        <div class="slot pick-slot"></div>
+                        <div class="slot pick-slot"></div>
+                        <div class="slot pick-slot"></div>
+                        <div class="slot pick-slot"></div>
+                        <div class="slot pick-slot"></div>
+                    </div>
+                </div>
+                <div id="blueAnalysis" class="team-analysis"></div>
+            </div>
+
+            <!-- 中间：英雄选择区 -->
+            <div class="center-panel">
+                <!-- 位置筛选 -->
+                <div class="position-filter">
+                    <button class="filter-btn active" data-lane="all">全部</button>
+                    <button class="filter-btn" data-lane="对抗路">⚔️ 对抗路</button>
+                    <button class="filter-btn" data-lane="打野">🌲 打野</button>
+                    <button class="filter-btn" data-lane="中路">🔮 中路</button>
+                    <button class="filter-btn" data-lane="发育路">🏹 发育路</button>
+                    <button class="filter-btn" data-lane="游走">🛡️ 游走</button>
+                </div>
+
+                <!-- 推荐面板 -->
+                <div id="recommendPanel" class="recommend-panel hidden">
+                    <h3>💡 推荐英雄</h3>
+                    <div id="recommendList" class="recommend-list"></div>
+                </div>
+
+                <!-- 英雄列表 -->
+                <div class="heroes-grid" id="heroesGrid"></div>
+            </div>
+
+            <!-- 右侧：红方 -->
+            <div class="team-panel red-team">
+                <h2 id="redTeamTitle" class="team-title red">❤️ 红方</h2>
+                <div class="bans-section">
+                    <h3>🚫 禁用</h3>
+                    <div id="redBans" class="hero-slots">
+                        <div class="slot ban-slot"></div>
+                        <div class="slot ban-slot"></div>
+                        <div class="slot ban-slot"></div>
+                        <div class="slot ban-slot"></div>
+                        <div class="slot ban-slot"></div>
+                    </div>
+                </div>
+                <div class="picks-section">
+                    <h3>✨ 选择</h3>
+                    <div id="redPicks" class="hero-slots">
+                        <div class="slot pick-slot"></div>
+                        <div class="slot pick-slot"></div>
+                        <div class="slot pick-slot"></div>
+                        <div class="slot pick-slot"></div>
+                        <div class="slot pick-slot"></div>
+                    </div>
+                </div>
+                <div id="redAnalysis" class="team-analysis"></div>
+            </div>
+        </div>
+
+        <!-- 历史比赛记录 -->
+        <div id="gamesHistory" class="games-history hidden">
+            <h2>📜 历史对局</h2>
+            <div id="historyList" class="history-list"></div>
+        </div>
+
+        <!-- 阵容分析面板 -->
+        <div id="analysisPanel" class="analysis-panel hidden">
+            <h2>📊 阵容分析</h2>
+            <div class="analysis-content">
+                <div class="analysis-section">
+                    <h3>蓝方</h3>
+                    <div id="blueTeamAnalysis"></div>
+                </div>
+                <div class="vs-divider">VS</div>
+                <div class="analysis-section">
+                    <h3>红方</h3>
+                    <div id="redTeamAnalysis"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/bp.js"></script>
+</body>
+</html>

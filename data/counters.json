@@ -1,0 +1,142 @@
+[
+  {
+    "hero_id": 1,
+    "name": "廉颇",
+    "counters": [14, 27, 43],
+    "countered_by": [52, 75, 88],
+    "note": "坦度高，克制近战战士；被真伤英雄克制"
+  },
+  {
+    "hero_id": 2,
+    "name": "小乔",
+    "counters": [5, 21, 35],
+    "countered_by": [15, 25, 47],
+    "note": "爆发高，克制脆皮；被刺客突脸克制"
+  },
+  {
+    "hero_id": 3,
+    "name": "赵云",
+    "counters": [2, 6, 35],
+    "countered_by": [18, 36, 65],
+    "note": "突进能力强，克制后排；被控制和风筝克制"
+  },
+  {
+    "hero_id": 5,
+    "name": "妲己",
+    "counters": [2, 35, 48],
+    "countered_by": [3, 25, 47],
+    "note": "单体爆发，克制落单英雄；被魔女和位移克制"
+  },
+  {
+    "hero_id": 7,
+    "name": "孙尚香",
+    "counters": [1, 16, 30],
+    "countered_by": [11, 25, 47],
+    "note": "高爆发射手，克制坦克；被刺客突脸克制"
+  },
+  {
+    "hero_id": 8,
+    "name": "鲁班七号",
+    "counters": [1, 16, 36],
+    "countered_by": [3, 11, 47],
+    "note": "持续输出高，克制坦克；无位移被刺客克制"
+  },
+  {
+    "hero_id": 11,
+    "name": "阿轲",
+    "counters": [2, 5, 35],
+    "countered_by": [1, 52, 75],
+    "note": "隐身背刺，克制脆皮；被控制和坦克克制"
+  },
+  {
+    "hero_id": 15,
+    "name": "白起",
+    "counters": [3, 11, 47],
+    "countered_by": [18, 51, 100],
+    "note": "团控坦克，克制突进英雄；被真伤克制"
+  },
+  {
+    "hero_id": 18,
+    "name": "吕布",
+    "counters": [1, 15, 30],
+    "countered_by": [25, 47, 52],
+    "note": "真伤克制坦克；被风筝和控制克制"
+  },
+  {
+    "hero_id": 25,
+    "name": "李白",
+    "counters": [2, 5, 35],
+    "countered_by": [52, 75, 88],
+    "note": "灵活刺客，克制后排；被硬控克制"
+  },
+  {
+    "hero_id": 30,
+    "name": "武则天",
+    "counters": [3, 11, 25],
+    "countered_by": [47, 52, 75],
+    "note": "全图大招，克制突进；被刺客突脸克制"
+  },
+  {
+    "hero_id": 35,
+    "name": "露娜",
+    "counters": [2, 5, 7],
+    "countered_by": [52, 75, 88],
+    "note": "月下无限连，克制脆皮；被硬控和东皇克制"
+  },
+  {
+    "hero_id": 39,
+    "name": "韩信",
+    "counters": [2, 5, 35],
+    "countered_by": [1, 15, 52],
+    "note": "高机动性，克制后排；被硬控克制"
+  },
+  {
+    "hero_id": 43,
+    "name": "花木兰",
+    "counters": [7, 8, 35],
+    "countered_by": [1, 18, 52],
+    "note": "沉默爆发，克制射手；被坦克和风筝克制"
+  },
+  {
+    "hero_id": 47,
+    "name": "孙悟空",
+    "counters": [2, 5, 35],
+    "countered_by": [1, 15, 52],
+    "note": "爆发刺客，克制脆皮；被硬控和坦克克制"
+  },
+  {
+    "hero_id": 52,
+    "name": "东皇太一",
+    "counters": [25, 35, 47],
+    "countered_by": [7, 8, 18],
+    "note": "大招压制，克制位移英雄；被远程消耗克制"
+  },
+  {
+    "hero_id": 65,
+    "name": "铠",
+    "counters": [7, 8, 35],
+    "countered_by": [1, 15, 52],
+    "note": "开大秒人，克制脆皮；被控制和风筝克制"
+  },
+  {
+    "hero_id": 75,
+    "name": "张良",
+    "counters": [25, 35, 47],
+    "countered_by": [3, 11, 39],
+    "note": "压制控制，克制刺客；被突脸克制"
+  },
+  {
+    "hero_id": 88,
+    "name": "嫦娥",
+    "counters": [1, 15, 30],
+    "countered_by": [18, 51, 100],
+    "note": "高坦度法师，克制近战；被真伤克制"
+  },
+  {
+    "hero_id": 100,
+    "name": "澜",
+    "counters": [2, 5, 35],
+    "countered_by": [1, 15, 52],
+    "note": "位移多，克制后排；被硬控克制"
+  }
+]
