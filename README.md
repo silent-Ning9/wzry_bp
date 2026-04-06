@@ -70,7 +70,7 @@ wzry_bp/
 
 ## 🎯 BP 流程
 
-### 常规 BP（BO1-BO6 / BO8 等）
+### 常规 BP
 
 采用 KPL 全局 BP 赛制：
 
